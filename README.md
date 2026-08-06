@@ -61,7 +61,7 @@ mkdocs serve
 | | Experiment | Question it answers |
 |---|---|---|
 | **M0** | [Hello TPU](mini/m0_hello_tpu.py) | Does the environment work, and what does one large matmul actually achieve? |
-| M1 | TPU generation spec sheet | What are the real peak FLOP/s, HBM bandwidth, and on-chip memory figures? |
+| **M1** | [Specification table](mini/m1_spec_table.py) | What are the peak FLOP/s, HBM bandwidth, and on-chip figures per generation? |
 | M2 | matmul MFU sweep | Where is the memory-bound / compute-bound crossover? |
 | M3 | CPU vs GPU vs TPU | How does the same operation behave across architectures? |
 
@@ -132,6 +132,7 @@ appropriate denominator for arithmetic intensity.
 Populated as experiments land. Each entry links to the script that produced it
 and the JSON record in `results/`.
 
-| Experiment | Chip | Headline number |
-|---|---|---|
-| M0 | — | pending |
+| Experiment | Result |
+|---|---|
+| [M1](https://indiaprince-dev.github.io/tpu-perf-lab/experiments/m1-spec-sheet/) | Machine balance spans 166 (v5p) to 560 (v6e) FLOP/byte, a factor of 3.4. Roofline conclusions do not transfer between generations. |
+| M0 | pending first run |

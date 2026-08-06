@@ -22,10 +22,12 @@ units idle regardless of how well it is written.
 
 !!! warning "These figures are illustrative"
 
-    Peak throughput and bandwidth differ substantially across TPU generations,
-    and published peak figures generally assume a particular dtype and sparsity
-    condition. Collecting the actual values is [M1](../experiments/index.md),
-    which precedes every other measurement for this reason.
+    Peak throughput and bandwidth differ substantially across TPU generations.
+    The published figures are collected in
+    [TPU specifications](../reference/tpu-specs.md): machine balance ranges from
+    166 FLOP/byte on v5p to 560 on v6e, a factor of 3.4. A kernel at 300
+    FLOP/byte is compute-bound on one and memory-bound on the other, so these
+    conclusions are per-chip. See [M1](../experiments/m1-spec-sheet.md).
 
 ## Arithmetic intensity
 
@@ -167,7 +169,8 @@ Small matrix multiplications are therefore slow because they are
 memory-bound, not because of their size. Batching or fusing them increases
 intensity and moves them right along the x-axis.
 
-Locating the crossover on real hardware is [M2](../experiments/index.md).
+Predicted thresholds per generation are in [M1](../experiments/m1-spec-sheet.md).
+Locating the crossover on real hardware is M2.
 
 ## Limitations of the model
 

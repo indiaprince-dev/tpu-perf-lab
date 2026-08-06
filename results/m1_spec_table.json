@@ -1,0 +1,77 @@
+{
+  "experiment": "m1_spec_table",
+  "note": "Transcribed from official Cloud TPU documentation. Peak figures are theoretical; no bandwidth was measured.",
+  "chips": [
+    {
+      "key": "v4",
+      "name": "TPU v4",
+      "bf16_tflops": 275,
+      "hbm_bandwidth_gb_per_s": 1200.0,
+      "hbm_capacity_bytes": 34359738368,
+      "hbm_capacity_as_documented": "32 GiB",
+      "machine_balance_flop_per_byte": 229.17,
+      "mxu_dim": 128,
+      "tensorcores": 2,
+      "low_precision_format": "int8",
+      "low_precision_speedup": 1.0,
+      "pod_chips": 4096,
+      "bandwidth_as_documented": "1200 GBps",
+      "source": "https://docs.cloud.google.com/tpu/docs/v4"
+    },
+    {
+      "key": "v5e",
+      "name": "TPU v5e",
+      "bf16_tflops": 197,
+      "hbm_bandwidth_gb_per_s": 858.9934592,
+      "hbm_capacity_bytes": 16000000000,
+      "hbm_capacity_as_documented": "16 GB",
+      "machine_balance_flop_per_byte": 229.34,
+      "mxu_dim": 128,
+      "tensorcores": 1,
+      "low_precision_format": "int8",
+      "low_precision_speedup": 1.9949238578680204,
+      "pod_chips": 256,
+      "bandwidth_as_documented": "800 GiBps",
+      "source": "https://docs.cloud.google.com/tpu/docs/v5e"
+    },
+    {
+      "key": "v5p",
+      "name": "TPU v5p",
+      "bf16_tflops": 459,
+      "hbm_bandwidth_gb_per_s": 2765.0,
+      "hbm_capacity_bytes": 102005473280,
+      "hbm_capacity_as_documented": "95 GiB",
+      "machine_balance_flop_per_byte": 166.0,
+      "mxu_dim": 128,
+      "tensorcores": 2,
+      "low_precision_format": "fp8",
+      "low_precision_speedup": 1.0,
+      "pod_chips": 8960,
+      "bandwidth_as_documented": "2765 GBps",
+      "source": "https://docs.cloud.google.com/tpu/docs/v5p"
+    },
+    {
+      "key": "v6e",
+      "name": "TPU v6e (Trillium)",
+      "bf16_tflops": 918,
+      "hbm_bandwidth_gb_per_s": 1638.0,
+      "hbm_capacity_bytes": 32000000000,
+      "hbm_capacity_as_documented": "32 GB",
+      "machine_balance_flop_per_byte": 560.44,
+      "mxu_dim": 256,
+      "tensorcores": 1,
+      "low_precision_format": "int8",
+      "low_precision_speedup": 2.0,
+      "pod_chips": 256,
+      "bandwidth_as_documented": "1638 GBps",
+      "source": "https://docs.cloud.google.com/tpu/docs/v6e"
+    }
+  ],
+  "derived": {
+    "machine_balance_min": 166.0,
+    "machine_balance_max": 560.44,
+    "machine_balance_spread": 3.38,
+    "v5e_balance_gib_reading": 229.34,
+    "v5e_balance_gb_reading": 246.25
+  }
+}

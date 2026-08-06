@@ -42,19 +42,22 @@ timing = benchmark(matmul, a, b, warmup=3, reps=20)
 
 ## Results
 
-!!! info "Pending"
+!!! info "Pending first run"
 
-    Awaiting first run. Results land here with the environment record and the
-    fraction-of-peak calculation once M1 establishes the peak figure.
+    [M1](m1-spec-sheet.md) has supplied the peak figures, so the script now
+    resolves the chip against `tpuperf/specs.py` and reports fraction of peak
+    and regime directly. The table below fills in from that output.
 
 | Field | Value |
 |---|---|
 | Device | — |
 | Time (median) | — |
 | Achieved | — TFLOP/s |
-| Peak (from M1) | — TFLOP/s |
+| Peak, bf16 ([M1](m1-spec-sheet.md)) | — TFLOP/s |
 | **Fraction of peak** | **—** |
 | Arithmetic intensity | — FLOP/byte |
+| Machine balance | — FLOP/byte |
+| Regime | — |
 
 Raw record: `results/m0_hello_tpu.json`
 
@@ -89,6 +92,6 @@ install step can be skipped.
 
 ## Next
 
-**M1 — TPU specification table.** The fraction-of-peak entry above cannot be
-completed without a reliable peak figure, and published numbers vary by dtype
-and by their sparsity assumptions. Collecting them is the next experiment.
+**M2 — matmul MFU sweep.** One shape gives one point. Sweeping $N$ produces the
+curve, and the crossover it reveals can be compared against the machine balance
+[M1](m1-spec-sheet.md) predicts for this chip.

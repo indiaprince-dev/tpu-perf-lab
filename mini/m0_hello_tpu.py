@@ -27,6 +27,7 @@ from tpuperf import (  # noqa: E402
     benchmark,
     device_info,
     format_device_info,
+    lookup,
     matmul_bytes,
     matmul_flops,
     prng_key,
@@ -71,6 +72,8 @@ def main() -> None:
     hbm_bytes = matmul_bytes(N, N, N, jnp.dtype(DTYPE).itemsize)
     intensity = flops / hbm_bytes
 
+    spec = lookup(info["device_kind"])
+
     print()
     print(f"matmul       {N}x{N} @ {N}x{N}, {jnp.dtype(DTYPE).name}")
     print(f"  time       {timing.median * 1e3:.3f} ms "
@@ -80,9 +83,20 @@ def main() -> None:
     print(f"  HBM        {timing.gbytes_per_s(hbm_bytes):.1f} GB/s "
           f"(lower bound on traffic)")
     print(f"  intensity  {intensity:.0f} FLOP/byte")
-    print()
-    print("Next: look up this chip's peak TFLOP/s and HBM bandwidth (M1),")
-    print("then compute what fraction of peak the number above represents.")
+
+    if spec is None:
+        print()
+        print(f"No published peak on file for {info['device_kind']!r}. Add it to")
+        print("tpuperf/specs.py before interpreting the figures above.")
+    else:
+        fraction = timing.tflops(flops) / spec.bf16_tflops
+        regime = "compute-bound" if intensity > spec.machine_balance else "memory-bound"
+        print()
+        print(f"against {spec.name} (M1)")
+        print(f"  peak       {spec.bf16_tflops:.0f} TFLOP/s bf16")
+        print(f"  achieved   {fraction * 100:.1f}% of peak")
+        print(f"  balance    {spec.machine_balance:.0f} FLOP/byte "
+              f"-> this shape is {regime}")
 
     RESULTS.mkdir(exist_ok=True)
     payload = {
@@ -94,6 +108,16 @@ def main() -> None:
             "achieved_tflops": timing.tflops(flops),
             "hbm_gb_per_s_lower_bound": timing.gbytes_per_s(hbm_bytes),
             "arithmetic_intensity_flop_per_byte": intensity,
+            "peak_tflops": spec.bf16_tflops if spec else None,
+            "fraction_of_peak": (
+                timing.tflops(flops) / spec.bf16_tflops if spec else None
+            ),
+            "machine_balance": spec.machine_balance if spec else None,
+            "regime": (
+                None if spec is None
+                else "compute-bound" if intensity > spec.machine_balance
+                else "memory-bound"
+            ),
         },
     }
     path = RESULTS / "m0_hello_tpu.json"

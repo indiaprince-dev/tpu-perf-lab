@@ -1,49 +1,80 @@
 # TPU specifications
 
-Peak throughput, memory bandwidth, and on-chip memory capacity per generation.
-Every roofline calculation on this site depends on these figures, which is why
-collecting them is [M1](../experiments/index.md), the first substantive
-experiment.
+Per-chip figures transcribed from the official Cloud TPU documentation,
+August 2026. Every roofline calculation on this site depends on these numbers.
+The collection process and its findings are [M1](../experiments/m1-spec-sheet.md).
 
-!!! warning "Not yet collected"
+## Published figures
 
-    This table is populated by M1 from primary sources. It is left empty rather
-    than filled with figures quoted second-hand.
+| Generation | Peak bf16 | Low precision | HBM capacity | HBM bandwidth | TensorCores | MXU | Pod | Source |
+|---|---|---|---|---|---|---|---|---|
+| TPU v4 | 275 TFLOP/s | 275 TOPS int8 | 32 GiB | 1200 GBps | 2 | 128×128 | 4096 | [docs](https://docs.cloud.google.com/tpu/docs/v4) |
+| TPU v5e | 197 TFLOP/s | 393 TOPS int8 | 16 GB | 800 GiBps | 1 | 128×128 | 256 | [docs](https://docs.cloud.google.com/tpu/docs/v5e) |
+| TPU v5p | 459 TFLOP/s | 459 TFLOP/s fp8 | 95 GiB | 2765 GBps | 2 | 128×128 | 8960 | [docs](https://docs.cloud.google.com/tpu/docs/v5p) |
+| TPU v6e | 918 TFLOP/s | 1836 TOPS int8 | 32 GB | 1638 GBps | 1 | 256×256 | 256 | [docs](https://docs.cloud.google.com/tpu/docs/v6e) |
 
-## Why this is harder than looking it up
+Capacity and bandwidth are reproduced in the units used by the source. The
+documentation mixes GB and GiB between generations; see
+[units](#a-note-on-units) below.
 
-Vendor peak figures are not directly comparable without unpacking what they
-assume:
+Interchip interconnect bandwidth, bidirectional, per chip: v5e 400 GBps,
+v5p 1200 GBps, v6e 800 GBps. The v4 page gives six interconnect links per chip
+without a per-chip bandwidth figure.
 
-- **dtype.** A chip quoted at *X* TFLOP/s in int8 may be at *X/2* in bf16 and
-  far lower in fp32. Comparisons must fix the dtype.
-- **Sparsity.** Some published figures assume structured sparsity that dense
-  matmul does not benefit from.
-- **Chip versus board versus pod.** A "v5e" figure may refer to one chip, or
-  to a host with several, or to a full pod slice. Per-chip normalisation is
-  required before any of it means anything.
-- **Bandwidth definition.** HBM bandwidth is usually theoretical peak.
-  Achievable bandwidth on a streaming benchmark is lower, and that is the
-  number a roofline should arguably use.
+TPU v7 (Ironwood) uses the 256×256 MXU according to the architecture page, but
+a per-chip specification page was not reachable at the time of collection.
 
-M1 records both the quoted figure and its source, and where feasible a
-measured bandwidth to sit beside the theoretical one.
+## Derived: machine balance
 
-## Table
+Machine balance is peak throughput divided by memory bandwidth. It is the
+arithmetic intensity a kernel must exceed to be compute-bound.
 
-| Generation | Peak (bf16) | HBM capacity | HBM bandwidth | On-chip memory | Source |
-|---|---|---|---|---|---|
-| v4 | — | — | — | — | — |
-| v5e | — | — | — | — | — |
-| v5p | — | — | — | — | — |
-| v6e | — | — | — | — | — |
+| Generation | Machine balance | Regime threshold |
+|---|---|---|
+| TPU v5p | **166** FLOP/byte | easiest to keep the matrix units fed |
+| TPU v4 | 229 FLOP/byte | |
+| TPU v5e | 229 FLOP/byte | (246 under the GB/s reading) |
+| TPU v6e | **560** FLOP/byte | hardest |
 
-## Derived
+**The threshold varies by a factor of 3.4 across generations.** A kernel with
+intensity 300 FLOP/byte is compute-bound on v5p, v4, and v5e, and memory-bound
+on v6e. Roofline conclusions do not transfer between chips.
 
-| Generation | Machine balance (FLOP/byte) |
-|---|---|
-| — | — |
+## A note on units
 
-Machine balance is peak divided by bandwidth — the arithmetic intensity a
-kernel must exceed to be compute-bound. See
-[the roofline model](../concepts/roofline.md).
+The source documentation is not internally consistent:
+
+- v5e bandwidth is published as **800 GiBps**; v4, v5p, and v6e use **GBps**.
+- v4 and v5p capacity is published in **GiB**; v5e and v6e in **GB**.
+
+For v5e the reading changes machine balance from **229.3** (GiB/s, as written)
+to **246.2** (GB/s), a difference of 7%. That is small enough to be invisible
+in a plot and large enough to matter when a measurement lands near the ridge.
+
+This repository stores the figure as documented and converts to bytes/s at the
+point of use. `tpuperf/specs.py` records the original string in
+`bandwidth_as_documented` and `capacity_as_documented` so the conversion stays
+auditable.
+
+## Limitations
+
+**These are theoretical peaks.** Vendor peak throughput assumes ideal issue
+rates, and published HBM bandwidth is the interface maximum rather than what a
+streaming kernel achieves. Measured bandwidth is lower, sometimes considerably.
+Machine balance computed from theoretical figures is therefore an upper bound
+on the intensity actually required.
+
+Measuring achievable bandwidth to sit beside the theoretical figure is
+outstanding work.
+
+## Programmatic access
+
+```python
+from tpuperf.specs import SPECS, lookup
+
+SPECS["v6e"].machine_balance        # 560.4
+lookup("TPU v5 lite").bf16_tflops   # 197.0
+```
+
+`tpuperf.specs` imports without JAX so the roofline calculator runs on any
+machine.

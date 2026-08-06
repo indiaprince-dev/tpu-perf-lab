@@ -14,7 +14,7 @@ table precedes the sweep, and the sweep precedes any kernel work.
 | | Experiment | Question | Status |
 |---|---|---|---|
 | **M0** | [Hello TPU](m0-hello-tpu.md) | Does the environment work, and what does one large matmul achieve? | code written |
-| M1 | TPU specification table | What are the real peak FLOP/s, HBM bandwidth, and on-chip memory figures per generation? | planned |
+| **M1** | [TPU specification table](m1-spec-sheet.md) | What are the peak FLOP/s, HBM bandwidth, and on-chip figures per generation? | **complete** |
 | M2 | matmul MFU sweep | Where does the memory-bound / compute-bound crossover actually fall? | planned |
 | M3 | CPU vs GPU vs TPU | How does one operation behave across three architectures? | planned |
 

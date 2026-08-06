@@ -1,0 +1,107 @@
+"""M0 — Hello TPU.
+
+Goal: confirm the environment works, and produce the first honest number:
+what fraction of the chip's peak does a single large matmul actually reach?
+
+That number is the entry point to everything else in this repo. A chip's
+spec sheet quotes peak FLOP/s; real kernels rarely get close. The gap is
+what performance engineering is about.
+
+Run:
+    python mini/m0_hello_tpu.py
+
+Colab:
+    Runtime > Change runtime type > TPU, then run the cells below.
+"""
+
+from __future__ import annotations
+
+import json
+import pathlib
+import sys
+
+import jax
+import jax.numpy as jnp
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+
+from tpuperf import (  # noqa: E402
+    benchmark,
+    device_info,
+    format_device_info,
+    matmul_bytes,
+    matmul_flops,
+    prng_key,
+)
+
+RESULTS = pathlib.Path(__file__).resolve().parents[1] / "results"
+
+# 4096 is large enough to be compute-bound on current TPUs and small enough
+# to fit comfortably in HBM. M2 sweeps this dimension to find where the
+# memory-bound / compute-bound crossover actually sits.
+N = 4096
+DTYPE = jnp.bfloat16  # the format TPU matrix units are built around
+
+
+@jax.jit
+def matmul(a: jax.Array, b: jax.Array) -> jax.Array:
+    return a @ b
+
+
+def main() -> None:
+    info = device_info()
+    print(format_device_info(info))
+    print()
+
+    if info["backend"] == "cpu":
+        print("WARNING: running on CPU. Numbers below are not TPU numbers.")
+        print("In Colab: Runtime > Change runtime type > TPU.\n")
+
+    # Random inputs, not ones — constant inputs let XLA fold the operation
+    # away and the benchmark would measure nothing.
+    key_a, key_b = jax.random.split(prng_key(0))
+    a = jax.random.normal(key_a, (N, N), dtype=DTYPE)
+    b = jax.random.normal(key_b, (N, N), dtype=DTYPE)
+
+    # Verify the result actually lands on the accelerator before timing.
+    out = matmul(a, b)
+    print(f"Result       {out.shape} {out.dtype} on {out.devices()}")
+
+    timing = benchmark(matmul, a, b, warmup=3, reps=20)
+
+    flops = matmul_flops(N, N, N)
+    hbm_bytes = matmul_bytes(N, N, N, jnp.dtype(DTYPE).itemsize)
+    intensity = flops / hbm_bytes
+
+    print()
+    print(f"matmul       {N}x{N} @ {N}x{N}, {jnp.dtype(DTYPE).name}")
+    print(f"  time       {timing.median * 1e3:.3f} ms "
+          f"(min {timing.minimum * 1e3:.3f}, sd {timing.stdev * 1e3:.3f}, "
+          f"n={timing.reps})")
+    print(f"  achieved   {timing.tflops(flops):.1f} TFLOP/s")
+    print(f"  HBM        {timing.gbytes_per_s(hbm_bytes):.1f} GB/s "
+          f"(lower bound on traffic)")
+    print(f"  intensity  {intensity:.0f} FLOP/byte")
+    print()
+    print("Next: look up this chip's peak TFLOP/s and HBM bandwidth (M1),")
+    print("then compute what fraction of peak the number above represents.")
+
+    RESULTS.mkdir(exist_ok=True)
+    payload = {
+        "experiment": "m0_hello_tpu",
+        "env": info,
+        "config": {"n": N, "dtype": jnp.dtype(DTYPE).name},
+        "timing_s": timing.as_dict(),
+        "derived": {
+            "achieved_tflops": timing.tflops(flops),
+            "hbm_gb_per_s_lower_bound": timing.gbytes_per_s(hbm_bytes),
+            "arithmetic_intensity_flop_per_byte": intensity,
+        },
+    }
+    path = RESULTS / "m0_hello_tpu.json"
+    path.write_text(json.dumps(payload, indent=2) + "\n")
+    print(f"\nWrote {path.relative_to(RESULTS.parent)}")
+
+
+if __name__ == "__main__":
+    main()

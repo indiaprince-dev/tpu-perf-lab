@@ -1,0 +1,26 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+.DS_Store
+
+# Profiler output — traces are large and machine-specific.
+# results/*.json IS committed; that's how the README shows numbers.
+*.pb
+*.trace.json.gz
+tensorboard/
+xprof/
+profiles/
+plugins/
+
+# XLA dumps (M7 generates these; keep the analysis, not the raw dump)
+hlo_dumps/
+*.hlo
+*.txt.before_optimizations
+*.txt.after_optimizations
+
+# Credentials — never
+*.json.key
+service-account*.json
+.env

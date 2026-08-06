@@ -1,0 +1,11 @@
+# On Colab TPU runtimes JAX is preinstalled — skip this file.
+#
+# Local / Cloud TPU VM:
+#   pip install -r requirements.txt
+#
+# For TPU support install the matching wheel, e.g.
+#   pip install "jax[tpu]" -f https://storage.googleapis.com/jax-releases/libtpu_releases.html
+
+jax>=0.4.30
+numpy>=1.26
+matplotlib>=3.8   # plots for M2 onward

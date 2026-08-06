@@ -26,7 +26,7 @@ executed, including recomputation. HFU is always ≥ MFU; the gap is the cost of
 
 ### Roofline
 A bound on attainable performance, $\min(P_{\text{peak}}, BW \times I)$,
-plotted against arithmetic intensity. A bound, not a prediction — kernels can
+plotted against arithmetic intensity. A bound rather than a prediction; kernels can
 fall below it for reasons the model omits.
 
 ### Compute-bound / memory-bound
@@ -43,7 +43,7 @@ general-purpose unit for dense matmul.
 
 ### HBM
 **High Bandwidth Memory.** The off-chip memory attached to the accelerator.
-Large, and slow relative to the arithmetic units — the usual bottleneck.
+Large, and slow relative to the arithmetic units. The usual bottleneck.
 
 ### VMEM
 On-chip memory on TPU, software-managed rather than a hardware cache. Kernel

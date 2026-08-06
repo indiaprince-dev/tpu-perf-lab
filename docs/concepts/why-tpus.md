@@ -1,24 +1,22 @@
 # Why TPUs exist
 
-## The forcing function
+## Origin
 
-Around 2013 Google worked through a projection: if every Android user ran
-voice search for three minutes a day, serving it on the existing fleet would
-require roughly doubling the datacenter footprint. Building a chip turned out
-to be cheaper than building the buildings.
+Around 2013 Google estimated that if every Android user ran voice search for
+three minutes a day, serving the load on existing hardware would require
+approximately doubling the datacenter footprint. Designing a dedicated chip
+was less expensive than the alternative. The TPU was a capital cost decision
+before it was a technical one.
 
-That framing is worth keeping. A TPU is not a research artifact — it is a
-capital expenditure argument that happened to be made in silicon.
+## The workload
 
-## What the workload actually is
+Nearly all arithmetic in a neural network is dense matrix multiplication. A
+transformer layer consists of a small number of large matrix multiplications
+plus comparatively inexpensive elementwise operations, and training repeats
+the same shapes billions of times.
 
-Nearly all of the arithmetic in a neural network is dense matrix
-multiplication. A transformer layer is a handful of large matmuls plus
-comparatively cheap elementwise work. Training runs the same shapes billions
-of times.
-
-This is an unusually narrow workload, and narrow workloads are exactly what
-general-purpose processors handle badly.
+The workload is therefore narrow, and general-purpose processors execute
+narrow workloads inefficiently.
 
 ## What general-purpose silicon spends its area on
 
@@ -43,15 +41,15 @@ flowchart TB
     end
 ```
 
-A CPU spends most of its transistor budget on *deciding what to do next*:
-predicting branches, reordering instructions, keeping caches coherent. For a
-matrix multiply, where the instruction stream is known in advance and perfectly
-regular, all of that machinery is overhead.
+Most of a CPU's transistor budget is spent on control: branch prediction,
+instruction reordering, and cache coherence. For matrix multiplication, where
+the instruction stream is known in advance and entirely regular, that machinery
+contributes nothing.
 
-A GPU is dramatically better — thousands of simple cores executing the same
-instruction across different data is a good match. But it remains general
-purpose. Register files, caches, and scheduling hardware still consume area and
-power on every operation.
+A GPU is substantially better suited. Thousands of simple cores executing one
+instruction across different data matches the workload closely. It remains
+general purpose, however, and register files, caches, and scheduling hardware
+continue to consume area and power on every operation.
 
 ## The systolic array
 
@@ -66,29 +64,30 @@ flowchart LR
     G[MAC grid<br/>each cell passes<br/>its result onward] --> O[Partial sums<br/>stream out]
 ```
 
-The consequence: after operands enter the array, producing each partial
-product costs no register read, no cache lookup, and no instruction decode.
-Data moves directly between adjacent cells.
+Once operands enter the array, producing each partial product requires no
+register read, no cache lookup, and no instruction decode. Data moves directly
+between adjacent cells.
 
-For the same die area and power budget, this performs far more multiplies than
-a general-purpose design. That is the entire trade — flexibility is exchanged
-for efficiency on one operation.
+For the same die area and power budget this performs considerably more
+multiplications than a general-purpose design. The trade is flexibility for
+efficiency on a single operation.
 
-## What it gives up
+## Limitations
 
-An ASIC only wins on the workload it was designed for.
+An ASIC is efficient only on the workload it was designed for.
 
-- Operations that are not dense matmul get comparatively little benefit. They
-  run on the vector unit and are usually bandwidth-limited.
-- Irregular control flow, dynamic shapes, and sparsity map poorly.
-- On-chip memory is largely **software-managed**. There is no cache to rescue
-  a poor access pattern — the compiler and kernel author decide what lives in
-  fast memory and when. This is why kernel authoring on TPU is explicit about
-  tiling in a way that GPU code often is not.
+- Operations other than dense matrix multiplication benefit comparatively
+  little. They execute on the vector unit and are typically bandwidth-limited.
+- Irregular control flow, dynamic shapes, and sparsity map poorly onto the
+  array.
+- On-chip memory is largely **software-managed**. No cache compensates for a
+  poor access pattern; the compiler and the kernel author determine what
+  resides in fast memory and when. TPU kernels are consequently explicit about
+  tiling in a way that GPU code frequently is not.
 
-That last point is the one that matters most in practice, and it leads
-directly to the next question: if the matrix unit is this fast, why do real
-workloads reach only a fraction of peak?
+The third property has the largest practical effect, and it raises the
+question that follows: if the matrix unit is this efficient, why do real
+workloads reach only a fraction of peak throughput?
 
-The answer is not the matrix unit. It is everything around it →
-**[the roofline model](roofline.md)**.
+The limit is usually not the matrix unit but the memory system around it. See
+[the roofline model](roofline.md).

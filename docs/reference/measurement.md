@@ -1,7 +1,7 @@
 # Measurement conventions
 
 Naive JAX benchmarks are wrong in three predictable ways. Every number on this
-site is collected through [`tpuperf/bench.py`][bench], which handles all three.
+site is collected through [`tpuperf/bench.py`][bench], which addresses each.
 
 [bench]: https://github.com/indiaprince-dev/tpu-perf-lab/blob/main/tpuperf/bench.py
 
@@ -31,9 +31,9 @@ The first invocation of a jitted function includes XLA compilation, which can
 be orders of magnitude slower than steady state. Warm-up runs are untimed, and
 `warmup >= 1` is enforced rather than defaulted.
 
-Compilation time is itself worth measuring — it matters for iteration speed
-and for deployment — but it is a different number and is reported separately
-when relevant.
+Compilation time is itself worth measuring, since it affects both iteration
+speed and deployment, but it is a separate quantity and is reported separately
+where relevant.
 
 ## 3. Single-shot timing is noisy
 
@@ -41,9 +41,9 @@ Host scheduling, clock behaviour, and neighbour traffic on shared hardware all
 add variance. Results are the **median** over repeated runs, reported with the
 minimum and standard deviation so the spread is visible.
 
-The minimum is included because it is the closest estimate of what the
-hardware can do with no interference; a large gap between minimum and median
-usually means the measurement environment is contended.
+The minimum is reported because it is the closest available estimate of
+uncontended performance. A large gap between minimum and median indicates a
+contended measurement environment.
 
 ## Inputs are random, not constant
 
@@ -52,8 +52,8 @@ a = jax.random.normal(key, (n, n), dtype=jnp.bfloat16)   # correct
 a = jnp.ones((n, n), dtype=jnp.bfloat16)                 # wrong
 ```
 
-Constant inputs allow XLA to fold the operation away entirely. The benchmark
-then measures nothing, convincingly and at implausible speed.
+Constant inputs allow XLA to fold the operation away entirely, after which the
+benchmark measures nothing at an implausible rate.
 
 ## Reported memory traffic is a lower bound
 
@@ -71,9 +71,9 @@ are re-read. Two consequences:
 - Reported arithmetic intensity is an **upper bound**, so the roofline
   prediction derived from it is optimistic.
 
-That asymmetry is deliberate. When a measurement falls below its predicted
-roofline, the first hypothesis is that the traffic estimate was too generous —
-which is a checkable claim rather than a shrug.
+The asymmetry is deliberate. When a measurement falls below its predicted
+roofline, the first hypothesis is that the traffic estimate was too generous,
+which is testable.
 
 ## Environment is recorded with every result
 
@@ -95,13 +95,14 @@ and HBM limit. A TFLOP/s figure without the chip it came from is not a result.
 }
 ```
 
-## What is not yet controlled
+## Uncontrolled variables
 
-Stated plainly, because these limit how far the numbers can be pushed:
+These bound the precision of every result on this site:
 
-- **No lockstep clock control.** Thermal and power behaviour is not held fixed
-  between runs.
+- **No clock control.** Thermal and power behaviour is not held fixed between
+  runs.
 - **Shared infrastructure.** Colab and multi-tenant Cloud TPU hosts are subject
-  to neighbour effects; the minimum/median gap is the only visibility into it.
-- **Single-host only, for now.** Anything involving inter-chip collectives
-  (M8 onward) will need its own conventions for attributing communication time.
+  to neighbour effects. The minimum-to-median gap is the only available
+  indicator.
+- **Single host.** Measurements involving inter-chip collectives (M8 onward)
+  will require separate conventions for attributing communication time.

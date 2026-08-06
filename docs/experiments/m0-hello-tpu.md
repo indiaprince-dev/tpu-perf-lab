@@ -3,22 +3,22 @@
 ## Question
 
 Does the environment work, and what fraction of the chip's peak throughput
-does a single large matrix multiply actually reach?
+does a single large matrix multiplication reach?
 
-The second half is the point. Everything else in this repository is an attempt
-to explain the gap this experiment opens.
+The second question is the substantive one. The remainder of this repository
+addresses the gap it exposes.
 
 ## Method
 
-A square bf16 matmul at $N = 4096$, timed through the standard
+A square bf16 matrix multiplication at $N = 4096$, timed under the standard
 [measurement conventions](../reference/measurement.md): three untimed warm-up
-calls, then the median of twenty timed repetitions with
-`jax.block_until_ready` on each.
+calls, then the median of twenty timed repetitions, each followed by
+`jax.block_until_ready`.
 
-$N = 4096$ is chosen to be comfortably compute-bound on current TPU
-generations — arithmetic intensity is around $2N/3s \approx 1365$ FLOP/byte in
-bf16, several times typical machine balance. If a chip cannot approach peak
-*here*, it will not anywhere.
+$N = 4096$ is chosen to be compute-bound on current TPU generations.
+Arithmetic intensity is approximately $2N/3s \approx 1365$ FLOP/byte in bf16,
+several times typical machine balance. A chip that does not approach peak at
+this shape will not do so at any other.
 
 Derived quantities:
 
@@ -72,10 +72,10 @@ To be written against the measurement. The questions it should answer:
 
 ## What this does not show
 
-A single shape at a single size. It says nothing about where the memory-bound
-crossover falls, how the number moves with dtype, or what happens once the
-operation is part of a larger graph where fusion decisions matter. Those are
-M2, M9, and M7 respectively.
+One shape at one size. The result says nothing about where the memory-bound
+crossover falls, how the figure varies with dtype, or what changes once the
+operation is embedded in a larger graph subject to fusion. Those are M2, M9,
+and M7 respectively.
 
 ## Reproduce
 
@@ -89,7 +89,6 @@ install step can be skipped.
 
 ## Next
 
-**M1 — TPU specification table.** The fraction-of-peak cell above cannot be
-filled without a trustworthy peak figure, and vendor numbers vary by dtype and
-by what they assume about sparsity. Collecting them properly is the next
-experiment for exactly that reason.
+**M1 — TPU specification table.** The fraction-of-peak entry above cannot be
+completed without a reliable peak figure, and published numbers vary by dtype
+and by their sparsity assumptions. Collecting them is the next experiment.

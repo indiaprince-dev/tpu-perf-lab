@@ -1,13 +1,15 @@
-"""Timing utilities for TPU/GPU benchmarking.
+"""Timing utilities for TPU and GPU benchmarking.
 
-Three things break naive JAX benchmarks, and this module handles all of them:
+Naive JAX benchmarks are wrong in three ways, each of which this module
+addresses:
 
-1. **Dispatch is asynchronous.** `f(x)` returns immediately with a future.
-   Timing without `block_until_ready` measures dispatch overhead, not compute.
-2. **`jit` compiles on first call.** The first invocation includes XLA
-   compilation, which can be orders of magnitude slower than steady state.
-3. **Single-shot timing is noisy.** Host scheduling, DVFS, and neighbor
-   traffic all add variance. Report the median over repeated runs.
+1. Dispatch is asynchronous. `f(x)` returns a future immediately, so timing
+   without `block_until_ready` measures dispatch overhead rather than compute.
+2. `jit` compiles on the first call. That invocation includes XLA compilation,
+   which can be orders of magnitude slower than steady state.
+3. Single-shot timing is noisy. Host scheduling, clock behaviour, and
+   neighbour traffic all contribute variance, so the median over repeated runs
+   is reported.
 """
 
 from __future__ import annotations
@@ -92,9 +94,8 @@ def matmul_flops(m: int, k: int, n: int) -> float:
 def matmul_bytes(m: int, k: int, n: int, itemsize: int) -> float:
     """Minimum HBM traffic for an (m, k) @ (k, n) matmul.
 
-    Counts each input read once and the output written once. Real kernels
-    move more than this when tiles do not fit in on-chip memory, so treat it
-    as a lower bound — which is exactly what makes it the right denominator
-    for arithmetic intensity.
+    Counts each input read once and the output written once. Real kernels move
+    more when tiles do not fit in on-chip memory, so this is a lower bound and
+    therefore the appropriate denominator for arithmetic intensity.
     """
     return float((m * k + k * n + m * n) * itemsize)

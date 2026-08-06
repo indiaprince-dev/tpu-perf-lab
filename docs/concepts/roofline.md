@@ -1,30 +1,31 @@
 # The roofline model
 
-A chip has two ceilings: how fast it can compute, and how fast it can move
-data. Any kernel is limited by one of them. The roofline model says which, and
-by how much, from two numbers you can look up and one you can calculate.
+A chip has two throughput limits: how fast it can compute, and how fast it can
+move data. Every kernel is bound by one of them. The roofline model determines
+which, and by what margin, from two published figures and one calculated
+quantity.
 
 ## Machine balance
 
-Take a TPU generation with roughly 200 TFLOP/s of bf16 throughput and 820 GB/s
-of HBM bandwidth. The ratio has units of FLOP per byte:
+Consider a TPU generation with approximately 200 TFLOP/s of bf16 throughput
+and 820 GB/s of HBM bandwidth. Their ratio has units of FLOP per byte:
 
 $$
 \text{machine balance} = \frac{200 \times 10^{12}\ \text{FLOP/s}}
 {820 \times 10^{9}\ \text{byte/s}} \approx 244\ \frac{\text{FLOP}}{\text{byte}}
 $$
 
-Read it as a requirement. In the time it takes to fetch one byte from HBM, the
-chip can perform about 244 floating-point operations. **A kernel that does not
-reuse each fetched byte at least 244 times will leave the matrix units idle**,
-no matter how well it is written.
+The ratio states a requirement. In the time required to fetch one byte from
+HBM, the chip can perform approximately 244 floating-point operations. A kernel
+that does not reuse each fetched byte at least 244 times leaves the matrix
+units idle regardless of how well it is written.
 
-!!! warning "Use real numbers"
+!!! warning "These figures are illustrative"
 
-    The figures above are illustrative. Peak throughput and bandwidth differ
-    substantially across TPU generations, and vendor peak figures often assume
-    a specific dtype and sparsity assumption. Collecting the actual values is
-    [M1](../experiments/index.md), and it comes first for exactly this reason.
+    Peak throughput and bandwidth differ substantially across TPU generations,
+    and published peak figures generally assume a particular dtype and sparsity
+    condition. Collecting the actual values is [M1](../experiments/index.md),
+    which precedes every other measurement for this reason.
 
 ## Arithmetic intensity
 
@@ -47,7 +48,7 @@ P_{\text{attainable}} = \min\left(P_{\text{peak}},\ BW \times I\right)
 $$
 
 Plotted on log-log axes, that is a diagonal line rising with bandwidth, then a
-flat ceiling at peak — the shape the model is named for.
+flat ceiling at peak, which is the shape the model is named for.
 
 <figure markdown>
 <svg viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Roofline model: attainable performance versus arithmetic intensity on log-log axes" style="max-width:100%;height:auto;color:inherit">
@@ -139,11 +140,10 @@ $$
 I = \frac{1}{8} = 0.125\ \text{FLOP/byte}
 $$
 
-That is roughly 1/2000 of machine balance. This kernel will reach a fraction
-of a percent of peak, and there is nothing to be done about it in isolation —
-the only fix is to stop running it in isolation. Fusing it into an adjacent
-operation removes the round trip to HBM entirely, which is why fusion is the
-first thing any ML compiler tries.
+This is roughly 1/2000 of machine balance, so the kernel reaches a fraction of
+a percent of peak. No improvement is available while the operation runs in
+isolation. Fusing it into an adjacent operation eliminates the round trip to
+HBM, which is why fusion is the first optimisation any ML compiler attempts.
 
 ### Matrix multiplication
 
@@ -154,27 +154,25 @@ $$
 I = \frac{2N^3}{3N^2 \cdot s} = \frac{2N}{3s}
 $$
 
-where $s$ is the element size in bytes. Intensity grows **linearly with $N$** —
-so the same operation sits on either side of the ridge depending only on size.
+where $s$ is the element size in bytes. Intensity grows linearly with $N$, so
+the same operation falls on either side of the ridge depending only on size.
 
 | $N$ | $I$ (fp32) | Regime |
 |---|---|---|
 | 256 | ≈ 171 | memory-bound |
 | 1024 | ≈ 683 | compute-bound |
-| 8192 | ≈ 5461 | compute-bound, comfortably |
+| 8192 | ≈ 5461 | compute-bound |
 
-This is the single most useful intuition the model provides: **small matmuls
-are not slow because they are small. They are slow because they are
-memory-bound.** Batching them, or fusing them, moves them right along the
-x-axis.
+Small matrix multiplications are therefore slow because they are
+memory-bound, not because of their size. Batching or fusing them increases
+intensity and moves them right along the x-axis.
 
-Finding where the crossover actually falls on real hardware is
-[M2](../experiments/index.md).
+Locating the crossover on real hardware is [M2](../experiments/index.md).
 
-## What the model deliberately ignores
+## Limitations of the model
 
-Roofline is a bound, not a prediction. A kernel can land well below its
-roofline for reasons the model does not represent:
+Roofline gives a bound rather than a prediction. A kernel can fall well below
+its roofline for reasons the model does not represent:
 
 - **Traffic that was not counted.** The $3N^2$ figure assumes each input is
   read exactly once. If tiles do not fit in on-chip memory they are re-read,
@@ -184,12 +182,13 @@ roofline for reasons the model does not represent:
   neither ceiling.
 - **Collective communication.** In multi-chip settings, time spent in
   all-reduce is neither compute nor local HBM traffic.
-- **Pipeline bubbles and idle gaps.** Visible in a profiler; invisible to the
+- **Pipeline bubbles and idle gaps.** Visible in a profiler, invisible to the
   model.
 
-Each of those is a separate experiment ([M6](../experiments/index.md) onward),
-and each exists because a roofline calculation disagreed with a measurement.
-That disagreement is the useful part.
+Each corresponds to a separate experiment ([M6](../experiments/index.md)
+onward). Disagreement between a roofline prediction and a measurement
+identifies which term the model is missing, which is the reason for taking
+both.
 
 ## Related
 

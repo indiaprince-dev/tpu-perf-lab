@@ -1,11 +1,11 @@
 # Experiments
 
-Each experiment answers one question, is small enough to finish in a sitting,
-and writes a JSON record to `results/` alongside its plots.
+Each experiment answers one question, is small enough to complete in a sitting,
+and writes a JSON record to `results/` alongside its figures.
 
-The sequence is deliberate. Arithmetic intensity cannot be computed without
-the chip's bandwidth and peak figures, so the specification table precedes the
-sweep; the sweep precedes any kernel work.
+The sequence is constrained rather than arbitrary. Arithmetic intensity cannot
+be computed without the chip's bandwidth and peak figures, so the specification
+table precedes the sweep, and the sweep precedes any kernel work.
 
 ---
 
@@ -47,18 +47,18 @@ sweep; the sweep precedes any kernel work.
 
 ## Page format
 
-Every experiment page follows the same structure, so results stay comparable
-and the reasoning stays auditable:
+Every experiment page follows the same structure, which keeps results
+comparable and the reasoning auditable.
 
-**Question** — one sentence, falsifiable.
-**Method** — what was run, on what hardware, with which parameters.
-**Results** — numbers and plots, with the raw JSON linked.
-**Interpretation** — what the numbers mean, including what they *do not* show.
-**Reproduce** — the exact command.
+**Question.** One sentence, falsifiable.
+**Method.** What was run, on what hardware, with which parameters.
+**Results.** Numbers and figures, with the raw JSON linked.
+**Interpretation.** What the numbers mean, including what they do not show.
+**Reproduce.** The exact command.
 
-!!! note "On negative results"
+!!! note "Negative results"
 
-    An experiment that fails to show what was expected is published with the
-    same weight as one that succeeds, provided the analysis explains why. A
-    hand-written kernel that loses to XLA is informative: it locates where the
+    An experiment that fails to show what was expected is published on the same
+    terms as one that succeeds, provided the analysis accounts for the outcome.
+    A hand-written kernel that loses to XLA is informative: it locates where the
     compiler is already optimal.

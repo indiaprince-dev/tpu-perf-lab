@@ -1,29 +1,31 @@
 # TPU Performance Lab
 
-**📖 [Read the documentation](https://indiaprince-dev.github.io/tpu-perf-lab/)**
+**[Documentation](https://indiaprince-dev.github.io/tpu-perf-lab/)**
 
 Experiments in measuring and closing the gap between a TPU's peak throughput
-and what real kernels actually achieve.
+and the throughput real kernels achieve.
 
-A chip's spec sheet quotes peak FLOP/s. Large model training commonly runs at
-20–50% of that. This repo is a systematic attempt to understand where the rest
-goes — starting from first measurements and building toward custom kernels.
+A chip's datasheet quotes peak FLOP/s. Large model training commonly sustains
+20–50% of it. This repository is a systematic attempt to account for the
+difference, beginning with first measurements and building toward custom
+kernels.
 
-Everything here is reproducible: each experiment is a script that records its
-environment alongside its numbers, and each result is written up with its
-method, its interpretation, and what it does *not* show.
+Each experiment is a script that records its environment alongside its numbers,
+and each result is written up with its method, its interpretation, and what it
+does not show.
 
 ---
 
-## Why this exists
+## Premise
 
-Compute has outpaced memory bandwidth for decades. On a current TPU the ratio
-is roughly a few hundred FLOPs per byte of HBM traffic, which means a kernel
-must reuse every byte it fetches hundreds of times to keep the matrix units
-busy. Kernels that do not are memory-bound, and no amount of extra FLOP/s on
-the next chip will help them.
+Compute throughput has outpaced memory bandwidth for several decades. On a
+current TPU the ratio is a few hundred FLOPs per byte of HBM traffic, so a
+kernel must reuse every byte it fetches hundreds of times to keep the matrix
+units occupied. Kernels that do not are memory-bound, and additional FLOP/s on
+the next chip does not help them.
 
-Finding out which regime a given kernel is in — and moving it — is the work.
+Determining which regime a kernel occupies, and moving it, is the subject of
+these experiments.
 
 ---
 
@@ -86,13 +88,13 @@ mkdocs serve
 |---|---|---|
 | M11 | First Pallas kernel (elementwise) | How do block specs and the memory hierarchy work? |
 | M12 | Pallas LayerNorm | How do reductions change the tiling problem? |
-| **P1** | [Fused attention kernel](p1-pallas-attention/PLAN.md) | Can a hand-written kernel beat the compiler, and why? |
+| **P1** | [Fused attention kernel](p1-pallas-attention/README.md) | Can a hand-written kernel beat the compiler, and why? |
 
 ---
 
 ## Running
 
-Requires a TPU. The quickest path is Google Colab — set
+Requires a TPU. The simplest option is Google Colab: select
 *Runtime → Change runtime type → TPU*; JAX comes preinstalled.
 
 ```bash
@@ -107,21 +109,21 @@ is needed for `tpuperf`.
 
 ## Measurement conventions
 
-Naive JAX benchmarks are wrong in three predictable ways, and
-[`tpuperf/bench.py`](tpuperf/bench.py) handles all three:
+Naive JAX benchmarks are wrong in three predictable ways, each addressed by
+[`tpuperf/bench.py`](tpuperf/bench.py):
 
-- **Dispatch is asynchronous.** A call returns a future; without
-  `block_until_ready` you are timing dispatch overhead.
-- **`jit` compiles on first call.** Warm-up runs are untimed.
+- **Dispatch is asynchronous.** A call returns a future, so timing without
+  `block_until_ready` measures dispatch overhead.
+- **`jit` compiles on the first call.** Warm-up runs are untimed.
 - **Single-shot timing is noisy.** Results are the median over repeated runs,
   reported with minimum and standard deviation.
 
 Inputs are random rather than constant, so XLA cannot fold away the operation
 under test.
 
-Reported HBM traffic is a *lower bound*: each input read once, each output
-written once. Real kernels move more when tiles spill. That makes it the right
-denominator for arithmetic intensity and a useful upper bound on efficiency.
+Reported HBM traffic is a lower bound: each input read once, each output
+written once. Real kernels move more when tiles spill, which makes this the
+appropriate denominator for arithmetic intensity.
 
 ---
 

@@ -1,14 +1,14 @@
 # TPU specifications
 
 Peak throughput, memory bandwidth, and on-chip memory capacity per generation.
-Every roofline calculation on this site depends on these numbers, which is why
-collecting them is [M1](../experiments/index.md) — the first substantive
-experiment rather than an afterthought.
+Every roofline calculation on this site depends on these figures, which is why
+collecting them is [M1](../experiments/index.md), the first substantive
+experiment.
 
 !!! warning "Not yet collected"
 
-    This table is populated by M1 from primary sources. It is deliberately
-    empty rather than filled with figures quoted second-hand.
+    This table is populated by M1 from primary sources. It is left empty rather
+    than filled with figures quoted second-hand.
 
 ## Why this is harder than looking it up
 

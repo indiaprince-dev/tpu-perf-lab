@@ -1,17 +1,15 @@
-"""M0 — Hello TPU.
+"""M0: Hello TPU.
 
-Goal: confirm the environment works, and produce the first honest number:
-what fraction of the chip's peak does a single large matmul actually reach?
+Confirms the environment and produces the first measurement: what fraction of
+the chip's peak throughput a single large matrix multiplication reaches.
 
-That number is the entry point to everything else in this repo. A chip's
-spec sheet quotes peak FLOP/s; real kernels rarely get close. The gap is
-what performance engineering is about.
+A datasheet quotes peak FLOP/s; real kernels rarely approach it. Accounting
+for that difference is the subject of the remaining experiments.
 
 Run:
     python mini/m0_hello_tpu.py
 
-Colab:
-    Runtime > Change runtime type > TPU, then run the cells below.
+On Colab, select Runtime > Change runtime type > TPU first.
 """
 
 from __future__ import annotations
@@ -36,11 +34,11 @@ from tpuperf import (  # noqa: E402
 
 RESULTS = pathlib.Path(__file__).resolve().parents[1] / "results"
 
-# 4096 is large enough to be compute-bound on current TPUs and small enough
-# to fit comfortably in HBM. M2 sweeps this dimension to find where the
-# memory-bound / compute-bound crossover actually sits.
+# 4096 is large enough to be compute-bound on current TPUs and small enough to
+# fit in HBM. M2 sweeps this dimension to locate the memory-bound to
+# compute-bound crossover.
 N = 4096
-DTYPE = jnp.bfloat16  # the format TPU matrix units are built around
+DTYPE = jnp.bfloat16  # the format TPU matrix units are designed around
 
 
 @jax.jit

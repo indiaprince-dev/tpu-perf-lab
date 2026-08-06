@@ -2,9 +2,9 @@ site_name: TPU Performance Lab
 site_description: >-
   Measuring and closing the gap between a TPU's peak throughput and what real
   kernels achieve.
-site_url: https://example.github.io/tpu-performance-lab/
-repo_url: https://github.com/example/tpu-performance-lab
-repo_name: tpu-performance-lab
+site_url: https://indiaprince-dev.github.io/tpu-perf-lab/
+repo_url: https://github.com/indiaprince-dev/tpu-perf-lab
+repo_name: indiaprince-dev/tpu-perf-lab
 edit_uri: ""
 
 theme:

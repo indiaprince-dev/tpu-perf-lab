@@ -1,6 +1,6 @@
 # TPU Performance Lab
 
-**📖 [Read the documentation](https://example.github.io/tpu-performance-lab/)**
+**📖 [Read the documentation](https://indiaprince-dev.github.io/tpu-perf-lab/)**
 
 Experiments in measuring and closing the gap between a TPU's peak throughput
 and what real kernels actually achieve.

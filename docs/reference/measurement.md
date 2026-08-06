@@ -3,7 +3,7 @@
 Naive JAX benchmarks are wrong in three predictable ways. Every number on this
 site is collected through [`tpuperf/bench.py`][bench], which handles all three.
 
-[bench]: https://github.com/example/tpu-performance-lab/blob/main/tpuperf/bench.py
+[bench]: https://github.com/indiaprince-dev/tpu-perf-lab/blob/main/tpuperf/bench.py
 
 ## 1. Dispatch is asynchronous
 

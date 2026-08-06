@@ -23,6 +23,7 @@ import jax.numpy as jnp
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
+from tpuperf.specs import normalize_dtype  # noqa: E402
 from tpuperf import (  # noqa: E402
     benchmark,
     device_info,
@@ -84,7 +85,7 @@ def main() -> None:
           f"(lower bound)")
     print(f"  intensity  {intensity:.0f} FLOP/byte")
 
-    dtype_name = jnp.dtype(DTYPE).name
+    dtype_name = normalize_dtype(jnp.dtype(DTYPE).name)
     fraction = balance = regime = None
 
     print()

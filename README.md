@@ -134,5 +134,5 @@ and the JSON record in `results/`.
 
 | Experiment | Result |
 |---|---|
+| [M0](https://indiaprince-dev.github.io/tpu-perf-lab/experiments/m0-hello-tpu/) | A 4096³ bf16 matmul reaches **76.8% of peak on TPU v5e** (151.3 of 197 TFLOP/s). The same source measures an emulated fallback on a Turing GPU, which has no bf16 path. |
 | [M1](https://indiaprince-dev.github.io/tpu-perf-lab/experiments/m1-spec-sheet/) | Machine balance spans 166 (v5p) to 560 (v6e) FLOP/byte, a factor of 3.4. Roofline conclusions do not transfer between generations. |
-| M0 | pending first run |

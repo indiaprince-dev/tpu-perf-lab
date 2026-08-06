@@ -47,9 +47,13 @@ the hardware changes.
 
 | Device | Time (median) | sd | Achieved | Reference peak | Fraction |
 |---|---|---|---|---|---|
-| CPU (Colab) | 1825.7 ms | 179.3 | 0.075 TFLOP/s | not published | — |
-| NVIDIA Tesla T4 | 36.6 ms | 6.2 | 3.76 TFLOP/s | 8.1 TFLOP/s fp32 | **46.9%** |
-| TPU v5e-1 | pending | | | 197 TFLOP/s bf16 | |
+| CPU (Colab) | 1825.7 ms | 179.3 (9.8%) | 0.075 TFLOP/s | not published | — |
+| NVIDIA Tesla T4 | 36.6 ms | 6.2 (17%) | 3.76 TFLOP/s | 8.1 TFLOP/s fp32 | 46.9% |
+| **TPU v5e-1** | **0.909 ms** | **0.007 (0.8%)** | **151.3 TFLOP/s** | 197 TFLOP/s bf16 | **76.8%** |
+
+On v5e: intensity 1365 against machine balance 229, so the shape sits a factor
+of six inside the compute-bound region. Measured traffic is 110.8 GB/s against
+859 GB/s of bandwidth, 13% utilised, which corroborates it.
 
 Raw record: `results/m0_hello_tpu.json`
 
@@ -69,21 +73,34 @@ hardware path at all. The same source, unchanged, measures the matrix unit on
 one device and an emulation on another. Any cross-architecture comparison has
 to establish dtype support before it compares numbers.
 
-**The CPU-to-T4 ratio is 50x** (1825.7 ms against 36.6 ms) even with the GPU
-running an emulated path. On a dtype the T4 executes natively the gap would be
-considerably wider.
+**76.8% of peak on a single unfused matmul.** The shortfall is not bandwidth:
+at 13% of HBM utilised and six times above machine balance, nothing here is
+waiting on memory. The remaining 23% is pipeline fill and drain, MXU issue
+efficiency, and per-call overhead on a kernel that runs for under a
+millisecond. N = 4096 divides evenly by the 128×128 MXU, so tile padding is not
+a factor. Whether the fraction improves with size is [M2](index.md).
 
-**Run-to-run spread is large on shared infrastructure.** The T4 standard
-deviation is 6.2 ms against a 36.6 ms median, 17%. Colab hardware is
-multi-tenant, and the minimum of 35.9 ms is the better estimate of uncontended
-performance. This is the case the
-[measurement conventions](../reference/measurement.md) anticipate.
+**The device ordering is 2000x, and most of it is not raw hardware.** v5e is
+2009x the CPU and 40x the T4. The T4 gap is inflated because bf16 ran emulated
+there; against the T4's native fp16 tensor rate of 65 TFLOP/s, v5e's 197 peak
+is only 3x. Most of the measured 40x is a dtype support difference, not a
+throughput difference.
 
-Remaining once the TPU run lands:
+**Measurement stability differs by an order of magnitude.** Standard deviation
+as a fraction of the median: v5e 0.8%, CPU 9.8%, T4 17%. The TPU runtime gives
+a dedicated chip while Colab GPU and CPU are contended. On v5e the minimum
+(0.904 ms) and median (0.909 ms) are within 0.6% of each other, so the
+[minimum-to-median gap](../reference/measurement.md) that flags contention is
+effectively absent.
 
-- Does the achieved figure approach peak, given that intensity of 1365 is well
-  above v5e machine balance of 229?
-- How does the v5e minimum-to-median gap compare with the T4's 17%?
+!!! bug "Fixed after this run"
+
+    The v5e run printed `no published bfloat16 peak` before falling through to
+    the correct comparison. JAX reports the dtype as `bfloat16` while the
+    datasheet key is `bf16`, so the support check failed on spelling and the
+    JSON record stored nulls for peak, fraction and regime. `normalize_dtype`
+    now maps between the two. The 76.8% figure was correct; the message and the
+    record were not.
 
 ## What this does not show
 

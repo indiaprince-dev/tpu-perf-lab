@@ -50,12 +50,16 @@ class DeviceSpec:
     _aliases: tuple[str, ...] = field(default=(), repr=False)
 
     def supports(self, dtype: str) -> bool:
-        """Whether the device has a published peak for this dtype."""
-        return dtype in self.peak_tflops
+        """Whether the device has a published peak for this dtype.
+
+        Accepts either the datasheet spelling ("bf16") or the JAX one
+        ("bfloat16").
+        """
+        return normalize_dtype(dtype) in self.peak_tflops
 
     def peak(self, dtype: str) -> Optional[float]:
         """Published peak in TFLOP/s (or TOPS) for a dtype, if any."""
-        return self.peak_tflops.get(dtype)
+        return self.peak_tflops.get(normalize_dtype(dtype))
 
     def machine_balance(self, dtype: str = "bf16") -> Optional[float]:
         """Arithmetic intensity, FLOP per byte, needed to be compute-bound.
@@ -171,6 +175,29 @@ SPECS: dict[str, DeviceSpec] = {
         _aliases=("tesla t4", "t4"),
     ),
 }
+
+
+# JAX reports dtype names such as "bfloat16" and "float32"; vendor datasheets
+# use "bf16" and "fp32". Mapping between them has to happen somewhere, and
+# getting it wrong reads as "this device has no path for that dtype".
+_DTYPE_ALIASES = {
+    "bfloat16": "bf16",
+    "float16": "fp16",
+    "half": "fp16",
+    "float32": "fp32",
+    "float": "fp32",
+    "float64": "fp64",
+    "double": "fp64",
+    "float8_e4m3fn": "fp8",
+    "float8_e4m3b11fnuz": "fp8",
+    "float8_e5m2": "fp8",
+}
+
+
+def normalize_dtype(name: str) -> str:
+    """Map a JAX or NumPy dtype name onto the key used in `peak_tflops`."""
+    key = str(name).lower()
+    return _DTYPE_ALIASES.get(key, key)
 
 
 def lookup(device_kind: str) -> Optional[DeviceSpec]:

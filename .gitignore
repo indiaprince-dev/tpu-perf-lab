@@ -5,6 +5,9 @@ venv/
 .ipynb_checkpoints/
 .DS_Store
 
+# mkdocs build output — GitHub Actions builds and deploys this
+site/
+
 # Profiler output — traces are large and machine-specific.
 # results/*.json IS committed; that's how the README shows numbers.
 *.pb

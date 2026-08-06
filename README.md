@@ -1,5 +1,7 @@
 # TPU Performance Lab
 
+**📖 [Read the documentation](https://example.github.io/tpu-performance-lab/)**
+
 Experiments in measuring and closing the gap between a TPU's peak throughput
 and what real kernels actually achieve.
 
@@ -8,7 +10,8 @@ A chip's spec sheet quotes peak FLOP/s. Large model training commonly runs at
 goes — starting from first measurements and building toward custom kernels.
 
 Everything here is reproducible: each experiment is a script that records its
-environment alongside its numbers.
+environment alongside its numbers, and each result is written up with its
+method, its interpretation, and what it does *not* show.
 
 ---
 
@@ -27,14 +30,25 @@ Finding out which regime a given kernel is in — and moving it — is the work.
 ## Structure
 
 ```
-tpuperf/          shared measurement helpers (timing, environment capture)
+docs/             documentation site — concepts, experiment write-ups, reference
+tpuperf/          measurement helpers (timing, environment capture, plotting)
 mini/             M0–M12: small, self-contained experiments
 p1-pallas-attention/   fused attention kernel in Pallas
-results/          JSON artifacts emitted by each experiment
+results/          JSON artifacts and figures emitted by each experiment
 ```
 
 Every number in this repo comes from a script in `mini/` or a project
 directory, and every script writes a JSON record to `results/`.
+
+### Documentation
+
+The site is the primary artifact; the scripts are how its numbers are
+produced. Built with MkDocs Material and deployed to GitHub Pages on push.
+
+```bash
+pip install -r requirements-docs.txt
+mkdocs serve
+```
 
 ---
 

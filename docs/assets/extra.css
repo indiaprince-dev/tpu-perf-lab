@@ -1,0 +1,42 @@
+/* Figures --------------------------------------------------------------- */
+figure {
+  margin: 1.6rem 0;
+  text-align: center;
+}
+figure svg {
+  display: block;
+  margin: 0 auto;
+}
+figcaption {
+  margin-top: 0.6rem;
+  font-size: 0.75rem;
+  opacity: 0.65;
+  font-style: normal;
+}
+
+/* Tables: numbers should line up ---------------------------------------- */
+.md-typeset table:not([class]) td {
+  font-variant-numeric: tabular-nums;
+}
+.md-typeset table:not([class]) th {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* Wide content scrolls inside its own container, never the page ---------- */
+.md-typeset .md-typeset__table {
+  overflow-x: auto;
+}
+
+/* Landing page cards ---------------------------------------------------- */
+.md-typeset .grid.cards > :is(ul, ol) > li,
+.md-typeset .grid > .card {
+  border-radius: 3px;
+}
+
+/* Mermaid inherits theme foreground ------------------------------------- */
+.mermaid {
+  margin: 1.4rem 0;
+}

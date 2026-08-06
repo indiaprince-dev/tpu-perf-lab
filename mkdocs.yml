@@ -1,0 +1,83 @@
+site_name: TPU Performance Lab
+site_description: >-
+  Measuring and closing the gap between a TPU's peak throughput and what real
+  kernels achieve.
+site_url: https://example.github.io/tpu-performance-lab/
+repo_url: https://github.com/example/tpu-performance-lab
+repo_name: tpu-performance-lab
+edit_uri: ""
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.instant
+    - navigation.tracking
+    - toc.follow
+    - content.code.copy
+    - content.code.annotate
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: deep orange
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: deep orange
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - Concepts:
+      - Why TPUs exist: concepts/why-tpus.md
+      - The roofline model: concepts/roofline.md
+  - Experiments:
+      - Overview: experiments/index.md
+      - "M0 · Hello TPU": experiments/m0-hello-tpu.md
+  - Reference:
+      - Measurement conventions: reference/measurement.md
+      - TPU specifications: reference/tpu-specs.md
+      - Glossary: reference/glossary.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+
+extra_css:
+  - assets/extra.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js

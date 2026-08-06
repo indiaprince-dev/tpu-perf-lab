@@ -16,7 +16,7 @@ __all__ = [
     "device_info",
     "format_device_info",
     "prng_key",
-    "ChipSpec",
+    "DeviceSpec",
     "SPECS",
     "lookup",
 ]
@@ -29,7 +29,7 @@ _LAZY = {
     "device_info": "tpuperf.env",
     "format_device_info": "tpuperf.env",
     "prng_key": "tpuperf.env",
-    "ChipSpec": "tpuperf.specs",
+    "DeviceSpec": "tpuperf.specs",
     "SPECS": "tpuperf.specs",
     "lookup": "tpuperf.specs",
 }
@@ -51,4 +51,4 @@ def __dir__():
 if TYPE_CHECKING:  # pragma: no cover
     from tpuperf.bench import Timing, benchmark, matmul_bytes, matmul_flops
     from tpuperf.env import device_info, format_device_info, prng_key
-    from tpuperf.specs import SPECS, ChipSpec, lookup
+    from tpuperf.specs import SPECS, DeviceSpec, lookup

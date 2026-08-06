@@ -1,9 +1,14 @@
-"""Published TPU specifications, per chip.
+"""Published accelerator specifications, per chip.
 
-Figures are transcribed from the official Cloud TPU documentation as of
-2026-08. Each entry records the unit as written in the source, because the
-documentation is inconsistent between GB and GiB across generations and the
-difference propagates into every roofline calculation.
+Figures are transcribed from vendor documentation as of 2026-08. Each entry
+records the unit as written in the source, because the documentation is
+inconsistent between GB and GiB across TPU generations and the difference
+propagates into every roofline calculation.
+
+Peak throughput is stored per dtype. A dtype absent from `peak_tflops` is not
+natively supported by that device, which matters: bf16 on a Turing GPU is
+emulated rather than executed on tensor cores, and the measured result reflects
+that rather than any property of the kernel.
 
 Sources:
     v4   https://docs.cloud.google.com/tpu/docs/v4
@@ -11,11 +16,12 @@ Sources:
     v5p  https://docs.cloud.google.com/tpu/docs/v5p
     v6e  https://docs.cloud.google.com/tpu/docs/v6e
     arch https://docs.cloud.google.com/tpu/docs/system-architecture-tpu-vm
+    T4   https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-t4/t4-tensor-core-datasheet.pdf
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 GIB = 1 << 30
@@ -23,117 +29,160 @@ GB = 10**9
 
 
 @dataclass(frozen=True)
-class ChipSpec:
-    """Per-chip published figures for one TPU generation."""
+class DeviceSpec:
+    """Per-chip published figures for one accelerator."""
 
     name: str
-    bf16_tflops: float
-    hbm_bandwidth_bytes_per_s: float
-    hbm_capacity_bytes: float
-    tensorcores: int
-    mxu_dim: int
-    pod_chips: int
+    vendor: str
+    peak_tflops: dict[str, float]
+    memory_bandwidth_bytes_per_s: float
+    memory_capacity_bytes: float
     bandwidth_as_documented: str
     capacity_as_documented: str
-    low_precision_tops: Optional[float] = None
-    low_precision_format: Optional[str] = None
+    memory_kind: str = "HBM"
+    reference_dtype: str = "bf16"
+    tensorcores: Optional[int] = None
+    mxu_dim: Optional[int] = None
+    pod_chips: Optional[int] = None
     ici_bandwidth_gbps: Optional[float] = None
+    notes: str = ""
     source: str = ""
+    _aliases: tuple[str, ...] = field(default=(), repr=False)
 
-    @property
-    def machine_balance(self) -> float:
-        """Arithmetic intensity, in FLOP per byte, required to be compute-bound."""
-        return self.bf16_tflops * 1e12 / self.hbm_bandwidth_bytes_per_s
+    def supports(self, dtype: str) -> bool:
+        """Whether the device has a published peak for this dtype."""
+        return dtype in self.peak_tflops
 
-    @property
-    def low_precision_speedup(self) -> Optional[float]:
-        """Throughput ratio of the low-precision format to bf16, if published."""
-        if self.low_precision_tops is None:
+    def peak(self, dtype: str) -> Optional[float]:
+        """Published peak in TFLOP/s (or TOPS) for a dtype, if any."""
+        return self.peak_tflops.get(dtype)
+
+    def machine_balance(self, dtype: str = "bf16") -> Optional[float]:
+        """Arithmetic intensity, FLOP per byte, needed to be compute-bound.
+
+        Returns None when the dtype has no published peak, since a balance
+        computed from a fallback path would describe the emulation rather than
+        the hardware.
+        """
+        p = self.peak(dtype)
+        if p is None:
             return None
-        return self.low_precision_tops / self.bf16_tflops
+        return p * 1e12 / self.memory_bandwidth_bytes_per_s
+
+    @property
+    def best_float_dtype(self) -> str:
+        """Highest-throughput floating-point dtype with a published peak.
+
+        Integer formats are excluded: a TOPS figure is not comparable with a
+        FLOP/s measurement, so using int4 as a reference would overstate the
+        denominator by an order of magnitude.
+        """
+        floats = {d: v for d, v in self.peak_tflops.items() if not d.startswith("int")}
+        return max(floats, key=floats.__getitem__)
 
 
 # Documented bandwidth units differ by generation: v5e is published in GiB/s,
-# the others in GB/s. Both are converted to bytes/s here so machine balance is
+# the others in GB/s. All are converted to bytes/s here so machine balance is
 # comparable across rows.
-SPECS: dict[str, ChipSpec] = {
-    "v4": ChipSpec(
+SPECS: dict[str, DeviceSpec] = {
+    "v4": DeviceSpec(
         name="TPU v4",
-        bf16_tflops=275,
-        low_precision_tops=275,
-        low_precision_format="int8",
-        hbm_bandwidth_bytes_per_s=1200 * GB,
-        hbm_capacity_bytes=32 * GIB,
+        vendor="Google",
+        peak_tflops={"bf16": 275, "int8": 275},
+        memory_bandwidth_bytes_per_s=1200 * GB,
+        memory_capacity_bytes=32 * GIB,
+        bandwidth_as_documented="1200 GBps",
+        capacity_as_documented="32 GiB",
         tensorcores=2,
         mxu_dim=128,
         pod_chips=4096,
-        bandwidth_as_documented="1200 GBps",
-        capacity_as_documented="32 GiB",
+        notes="int8 is published at the same rate as bf16; no quantisation gain.",
         source="https://docs.cloud.google.com/tpu/docs/v4",
+        _aliases=("v4",),
     ),
-    "v5e": ChipSpec(
+    "v5e": DeviceSpec(
         name="TPU v5e",
-        bf16_tflops=197,
-        low_precision_tops=393,
-        low_precision_format="int8",
-        hbm_bandwidth_bytes_per_s=800 * GIB,
-        hbm_capacity_bytes=16 * GB,
+        vendor="Google",
+        peak_tflops={"bf16": 197, "int8": 393},
+        memory_bandwidth_bytes_per_s=800 * GIB,
+        memory_capacity_bytes=16 * GB,
+        bandwidth_as_documented="800 GiBps",
+        capacity_as_documented="16 GB",
         tensorcores=1,
         mxu_dim=128,
         pod_chips=256,
-        bandwidth_as_documented="800 GiBps",
-        capacity_as_documented="16 GB",
         ici_bandwidth_gbps=400,
+        notes="Bandwidth is published in GiBps; the GBps reading gives 246 balance.",
         source="https://docs.cloud.google.com/tpu/docs/v5e",
+        _aliases=("v5 lite", "v5e", "v5litepod"),
     ),
-    "v5p": ChipSpec(
+    "v5p": DeviceSpec(
         name="TPU v5p",
-        bf16_tflops=459,
-        low_precision_tops=459,
-        low_precision_format="fp8",
-        hbm_bandwidth_bytes_per_s=2765 * GB,
-        hbm_capacity_bytes=95 * GIB,
+        vendor="Google",
+        peak_tflops={"bf16": 459, "fp8": 459},
+        memory_bandwidth_bytes_per_s=2765 * GB,
+        memory_capacity_bytes=95 * GIB,
+        bandwidth_as_documented="2765 GBps",
+        capacity_as_documented="95 GiB",
         tensorcores=2,
         mxu_dim=128,
         pod_chips=8960,
-        bandwidth_as_documented="2765 GBps",
-        capacity_as_documented="95 GiB",
         ici_bandwidth_gbps=1200,
+        notes="Publishes fp8 rather than int8, at parity with bf16.",
         source="https://docs.cloud.google.com/tpu/docs/v5p",
+        _aliases=("v5p",),
     ),
-    "v6e": ChipSpec(
+    "v6e": DeviceSpec(
         name="TPU v6e (Trillium)",
-        bf16_tflops=918,
-        low_precision_tops=1836,
-        low_precision_format="int8",
-        hbm_bandwidth_bytes_per_s=1638 * GB,
-        hbm_capacity_bytes=32 * GB,
+        vendor="Google",
+        peak_tflops={"bf16": 918, "int8": 1836},
+        memory_bandwidth_bytes_per_s=1638 * GB,
+        memory_capacity_bytes=32 * GB,
+        bandwidth_as_documented="1638 GBps",
+        capacity_as_documented="32 GB",
         tensorcores=1,
         mxu_dim=256,
         pod_chips=256,
-        bandwidth_as_documented="1638 GBps",
-        capacity_as_documented="32 GB",
         ici_bandwidth_gbps=800,
+        notes="MXU widened to 256x256; balance rose to 560, the highest here.",
         source="https://docs.cloud.google.com/tpu/docs/v6e",
+        _aliases=("v6e", "v6"),
+    ),
+    "t4": DeviceSpec(
+        name="NVIDIA Tesla T4",
+        vendor="NVIDIA",
+        # Turing tensor cores cover fp16, int8 and int4. There is no bf16 path:
+        # bf16 arrived with Ampere, so bf16 work here is emulated on CUDA cores.
+        peak_tflops={"fp32": 8.1, "fp16": 65, "int8": 130, "int4": 260},
+        memory_bandwidth_bytes_per_s=320 * GB,
+        memory_capacity_bytes=16 * GB,
+        bandwidth_as_documented="320 GB/s",
+        capacity_as_documented="16 GB",
+        memory_kind="GDDR6",
+        # bf16 falls back to the CUDA cores, so fp32 is the rate to compare
+        # against rather than the 65 TFLOP/s fp16 tensor-core headline.
+        reference_dtype="fp32",
+        notes=(
+            "Turing. No native bf16: tensor cores support fp16, int8 and int4 "
+            "only. bf16 kernels fall back and should be compared against the "
+            "8.1 TFLOP/s fp32 rate, not the 65 TFLOP/s fp16 tensor rate."
+        ),
+        source="https://www.nvidia.com/en-us/data-center/tesla-t4/",
+        _aliases=("tesla t4", "t4"),
     ),
 }
 
 
-def lookup(device_kind: str) -> Optional[ChipSpec]:
+def lookup(device_kind: str) -> Optional[DeviceSpec]:
     """Match a JAX `device_kind` string to a published specification.
 
-    `device_kind` reports values such as "TPU v5 lite" or "TPU v6e", so the
-    match is on substrings rather than equality. Returns None when the device
-    is not recognised, which callers should treat as "peak is unknown" rather
-    than substituting a guess.
+    `device_kind` reports values such as "TPU v5 lite" or "Tesla T4", so the
+    match is on aliases rather than equality. Returns None when the device is
+    unknown, which callers should treat as "peak is unknown" rather than
+    substituting a guess. CPU deliberately has no entry: peak varies by host.
     """
-    k = device_kind.lower().replace("-", " ")
-    if "v6" in k:
-        return SPECS["v6e"]
-    if "v5" in k and ("lite" in k or "5e" in k):
-        return SPECS["v5e"]
-    if "v5" in k:
-        return SPECS["v5p"]
-    if "v4" in k:
-        return SPECS["v4"]
+    k = device_kind.lower().replace("-", " ").strip()
+    for spec in SPECS.values():
+        if any(alias in k for alias in spec._aliases):
+            return spec
     return None

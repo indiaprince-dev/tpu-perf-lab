@@ -1,77 +1,127 @@
 {
   "experiment": "m1_spec_table",
-  "note": "Transcribed from official Cloud TPU documentation. Peak figures are theoretical; no bandwidth was measured.",
-  "chips": [
+  "note": "Transcribed from vendor documentation. Peak figures are theoretical; no bandwidth was measured.",
+  "devices": [
     {
       "key": "v4",
       "name": "TPU v4",
-      "bf16_tflops": 275,
-      "hbm_bandwidth_gb_per_s": 1200.0,
-      "hbm_capacity_bytes": 34359738368,
-      "hbm_capacity_as_documented": "32 GiB",
+      "vendor": "Google",
+      "reference_dtype": "bf16",
+      "supports_bf16": true,
+      "peak_tflops": {
+        "bf16": 275,
+        "int8": 275
+      },
       "machine_balance_flop_per_byte": 229.17,
+      "memory_bandwidth_gb_per_s": 1200.0,
+      "memory_kind": "HBM",
+      "bandwidth_as_documented": "1200 GBps",
+      "capacity_as_documented": "32 GiB",
       "mxu_dim": 128,
       "tensorcores": 2,
-      "low_precision_format": "int8",
-      "low_precision_speedup": 1.0,
       "pod_chips": 4096,
-      "bandwidth_as_documented": "1200 GBps",
+      "notes": "int8 is published at the same rate as bf16; no quantisation gain.",
       "source": "https://docs.cloud.google.com/tpu/docs/v4"
     },
     {
       "key": "v5e",
       "name": "TPU v5e",
-      "bf16_tflops": 197,
-      "hbm_bandwidth_gb_per_s": 858.9934592,
-      "hbm_capacity_bytes": 16000000000,
-      "hbm_capacity_as_documented": "16 GB",
+      "vendor": "Google",
+      "reference_dtype": "bf16",
+      "supports_bf16": true,
+      "peak_tflops": {
+        "bf16": 197,
+        "int8": 393
+      },
       "machine_balance_flop_per_byte": 229.34,
+      "memory_bandwidth_gb_per_s": 858.9934592,
+      "memory_kind": "HBM",
+      "bandwidth_as_documented": "800 GiBps",
+      "capacity_as_documented": "16 GB",
       "mxu_dim": 128,
       "tensorcores": 1,
-      "low_precision_format": "int8",
-      "low_precision_speedup": 1.9949238578680204,
       "pod_chips": 256,
-      "bandwidth_as_documented": "800 GiBps",
+      "notes": "Bandwidth is published in GiBps; the GBps reading gives 246 balance.",
       "source": "https://docs.cloud.google.com/tpu/docs/v5e"
     },
     {
       "key": "v5p",
       "name": "TPU v5p",
-      "bf16_tflops": 459,
-      "hbm_bandwidth_gb_per_s": 2765.0,
-      "hbm_capacity_bytes": 102005473280,
-      "hbm_capacity_as_documented": "95 GiB",
+      "vendor": "Google",
+      "reference_dtype": "bf16",
+      "supports_bf16": true,
+      "peak_tflops": {
+        "bf16": 459,
+        "fp8": 459
+      },
       "machine_balance_flop_per_byte": 166.0,
+      "memory_bandwidth_gb_per_s": 2765.0,
+      "memory_kind": "HBM",
+      "bandwidth_as_documented": "2765 GBps",
+      "capacity_as_documented": "95 GiB",
       "mxu_dim": 128,
       "tensorcores": 2,
-      "low_precision_format": "fp8",
-      "low_precision_speedup": 1.0,
       "pod_chips": 8960,
-      "bandwidth_as_documented": "2765 GBps",
+      "notes": "Publishes fp8 rather than int8, at parity with bf16.",
       "source": "https://docs.cloud.google.com/tpu/docs/v5p"
     },
     {
       "key": "v6e",
       "name": "TPU v6e (Trillium)",
-      "bf16_tflops": 918,
-      "hbm_bandwidth_gb_per_s": 1638.0,
-      "hbm_capacity_bytes": 32000000000,
-      "hbm_capacity_as_documented": "32 GB",
+      "vendor": "Google",
+      "reference_dtype": "bf16",
+      "supports_bf16": true,
+      "peak_tflops": {
+        "bf16": 918,
+        "int8": 1836
+      },
       "machine_balance_flop_per_byte": 560.44,
+      "memory_bandwidth_gb_per_s": 1638.0,
+      "memory_kind": "HBM",
+      "bandwidth_as_documented": "1638 GBps",
+      "capacity_as_documented": "32 GB",
       "mxu_dim": 256,
       "tensorcores": 1,
-      "low_precision_format": "int8",
-      "low_precision_speedup": 2.0,
       "pod_chips": 256,
-      "bandwidth_as_documented": "1638 GBps",
+      "notes": "MXU widened to 256x256; balance rose to 560, the highest here.",
       "source": "https://docs.cloud.google.com/tpu/docs/v6e"
+    },
+    {
+      "key": "t4",
+      "name": "NVIDIA Tesla T4",
+      "vendor": "NVIDIA",
+      "reference_dtype": "fp32",
+      "supports_bf16": false,
+      "peak_tflops": {
+        "fp32": 8.1,
+        "fp16": 65,
+        "int8": 130,
+        "int4": 260
+      },
+      "machine_balance_flop_per_byte": 25.31,
+      "memory_bandwidth_gb_per_s": 320.0,
+      "memory_kind": "GDDR6",
+      "bandwidth_as_documented": "320 GB/s",
+      "capacity_as_documented": "16 GB",
+      "mxu_dim": null,
+      "tensorcores": null,
+      "pod_chips": null,
+      "notes": "Turing. No native bf16: tensor cores support fp16, int8 and int4 only. bf16 kernels fall back and should be compared against the 8.1 TFLOP/s fp32 rate, not the 65 TFLOP/s fp16 tensor rate.",
+      "source": "https://www.nvidia.com/en-us/data-center/tesla-t4/"
     }
   ],
   "derived": {
-    "machine_balance_min": 166.0,
-    "machine_balance_max": 560.44,
-    "machine_balance_spread": 3.38,
+    "tpu_machine_balance_min": {
+      "v5p": 166.0
+    },
+    "tpu_machine_balance_max": {
+      "v6e": 560.44
+    },
+    "tpu_machine_balance_spread": 3.38,
     "v5e_balance_gib_reading": 229.34,
-    "v5e_balance_gb_reading": 246.25
+    "v5e_balance_gb_reading": 246.25,
+    "devices_without_bf16": [
+      "NVIDIA Tesla T4"
+    ]
   }
 }

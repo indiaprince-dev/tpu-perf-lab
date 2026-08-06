@@ -72,9 +72,28 @@ outstanding work.
 ```python
 from tpuperf.specs import SPECS, lookup
 
-SPECS["v6e"].machine_balance        # 560.4
-lookup("TPU v5 lite").bf16_tflops   # 197.0
+SPECS["v6e"].machine_balance("bf16")   # 560.4
+lookup("TPU v5 lite").peak("bf16")     # 197.0
+lookup("Tesla T4").supports("bf16")    # False
 ```
+
+Peak is stored per dtype. An absent dtype means the device has no hardware
+path for it, which is distinct from the device being unknown. `lookup` returns
+None for unrecognised devices, and CPU has no entry because peak varies by host.
 
 `tpuperf.specs` imports without JAX so the roofline calculator runs on any
 machine.
+
+## Non-TPU devices
+
+Comparison hardware is included so the same script can run across
+architectures. The dtype a device supports is a hardware property and does not
+transfer.
+
+| Device | Reference | Peak | Memory | Balance | Note |
+|---|---|---|---|---|---|
+| NVIDIA Tesla T4 | fp32 | 8.1 TFLOP/s | 320 GB/s GDDR6 | 25 | **No bf16 path.** Turing tensor cores cover fp16 (65), int8 (130), int4 (260). bf16 arrived with Ampere |
+
+A bf16 kernel on a T4 does not fail; it falls back to the CUDA cores. The
+result is a valid measurement of the fallback and says nothing about the
+kernel, which is why `supports()` exists.
